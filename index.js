@@ -1,26 +1,27 @@
 const TelegramBot = require("node-telegram-bot-api");
 const axios = require("axios");
-require("dotenv").config();
 
-// 🔐 ENV से tokens लेंगे
+// 🔑 Railway से token आएगा
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const API_TOKEN = process.env.API_TOKEN;
 
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 
-// 📡 API function (FIXED HEADERS)
-async function getGameData() {
+// 📡 API function
+async function getGameIssue() {
   try {
-    const res = await axios.get(
-      "https://api.ar-lottery01.com/api/Lottery/GetGameInfo?gameCode=WinGo_1M&language=en",
+    const res = await axios.post(
+      "https://api.bdg88zf.com/api/webapi/GetGameIssue",
+      {
+        typeId: 1,
+        language: 0,
+        random: "40079dcba93a48769c6ee9d4d4fae23f",
+        signature: "D12108C4F57C549D82B23A91E0FA20AE",
+        timestamp: Math.floor(Date.now() / 1000)
+      },
       {
         headers: {
-          "Authorization": `Bearer ${API_TOKEN}`,
           "Content-Type": "application/json",
-          "User-Agent": "Mozilla/5.0 (Linux; Android 10)",
-          "Origin": "https://www.jaiclub15.com",
-          "Referer": "https://www.jaiclub15.com/",
-          "Accept": "application/json, text/plain, */*"
+          "User-Agent": "Mozilla/5.0"
         }
       }
     );
@@ -31,33 +32,28 @@ async function getGameData() {
   }
 }
 
-// 🚀 /start command
+// 🚀 Start
 bot.onText(/\/start/, (msg) => {
-  bot.sendMessage(
-    msg.chat.id,
-    "✅ Bot Active\nUse /startbot to get data"
-  );
+  bot.sendMessage(msg.chat.id, "✅ Bot Ready\nUse /result");
 });
 
-// 📊 Fetch data
-bot.onText(/\/startbot/, async (msg) => {
+// 📊 Result command
+bot.onText(/\/result/, async (msg) => {
   const chatId = msg.chat.id;
 
   bot.sendMessage(chatId, "⏳ Fetching data...");
 
-  const data = await getGameData();
+  const data = await getGameIssue();
 
-  if (typeof data === "object") {
+  if (data && data.code === 0) {
+    const issue = data.data.issueNumber;
+    const result = data.data.result;
+
     bot.sendMessage(
       chatId,
-      "📊 DATA:\n" + JSON.stringify(data, null, 2)
+      `🎯 Period: ${issue}\n🎲 Result: ${result}`
     );
   } else {
-    bot.sendMessage(chatId, "❌ API Error:\n" + data);
+    bot.sendMessage(chatId, "❌ API Error:\n" + JSON.stringify(data));
   }
-});
-
-// 🛑 Error catch
-process.on("uncaughtException", (err) => {
-  console.log("Error:", err);
 });
