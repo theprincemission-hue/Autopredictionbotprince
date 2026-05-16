@@ -1,13 +1,11 @@
 const TelegramBot = require("node-telegram-bot-api");
 const axios = require("axios");
 
-// 🔑 Railway से token आएगा
-const BOT_TOKEN = process.env.BOT_TOKEN;
+const BOT_TOKEN = "PASTE_YOUR_BOT_TOKEN";
 
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 
-// 📡 API function
-async function getGameIssue() {
+async function getData() {
   try {
     const res = await axios.post(
       "https://api.bdg88zf.com/api/webapi/GetGameIssue",
@@ -20,40 +18,29 @@ async function getGameIssue() {
       },
       {
         headers: {
-          "Content-Type": "application/json",
-          "User-Agent": "Mozilla/5.0"
-        }
+          "Content-Type": "application/json"
+        },
+        timeout: 5000
       }
     );
 
     return res.data;
   } catch (err) {
-    return err.response?.data || err.message;
+    return "ERROR: " + err.message;
   }
 }
 
-// 🚀 Start
 bot.onText(/\/start/, (msg) => {
-  bot.sendMessage(msg.chat.id, "✅ Bot Ready\nUse /result");
+  bot.sendMessage(msg.chat.id, "Bot Ready ✅\nUse /result");
 });
 
-// 📊 Result command
 bot.onText(/\/result/, async (msg) => {
-  const chatId = msg.chat.id;
+  const data = await getData();
 
-  bot.sendMessage(chatId, "⏳ Fetching data...");
-
-  const data = await getGameIssue();
-
-  if (data && data.code === 0) {
-    const issue = data.data.issueNumber;
-    const result = data.data.result;
-
-    bot.sendMessage(
-      chatId,
-      `🎯 Period: ${issue}\n🎲 Result: ${result}`
-    );
-  } else {
-    bot.sendMessage(chatId, "❌ API Error:\n" + JSON.stringify(data));
+  if (typeof data === "string") {
+    bot.sendMessage(msg.chat.id, data);
+    return;
   }
+
+  bot.sendMessage(msg.chat.id, JSON.stringify(data));
 });
