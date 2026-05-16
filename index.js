@@ -1,18 +1,14 @@
 const TelegramBot = require("node-telegram-bot-api");
 const axios = require("axios");
+require("dotenv").config();
 
-// 🔐 Environment variables (Railway se aayenge)
+// 🔐 ENV से tokens लेंगे
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const API_TOKEN = process.env.API_TOKEN;
 
-if (!BOT_TOKEN || !API_TOKEN) {
-  console.error("❌ Missing BOT_TOKEN or API_TOKEN");
-  process.exit(1);
-}
-
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 
-// 📡 API call
+// 📡 API function (FIXED HEADERS)
 async function getGameData() {
   try {
     const res = await axios.get(
@@ -20,9 +16,12 @@ async function getGameData() {
       {
         headers: {
           "Authorization": `Bearer ${API_TOKEN}`,
-          "Content-Type": "application/json"
-        },
-        timeout: 10000
+          "Content-Type": "application/json",
+          "User-Agent": "Mozilla/5.0 (Linux; Android 10)",
+          "Origin": "https://www.jaiclub15.com",
+          "Referer": "https://www.jaiclub15.com/",
+          "Accept": "application/json, text/plain, */*"
+        }
       }
     );
 
@@ -32,20 +31,33 @@ async function getGameData() {
   }
 }
 
-// 🚀 Commands
+// 🚀 /start command
 bot.onText(/\/start/, (msg) => {
-  bot.sendMessage(msg.chat.id, "✅ Bot Ready\nUse /startbot");
+  bot.sendMessage(
+    msg.chat.id,
+    "✅ Bot Active\nUse /startbot to get data"
+  );
 });
 
+// 📊 Fetch data
 bot.onText(/\/startbot/, async (msg) => {
   const chatId = msg.chat.id;
 
+  bot.sendMessage(chatId, "⏳ Fetching data...");
+
   const data = await getGameData();
 
-  if (!data || typeof data === "string") {
+  if (typeof data === "object") {
+    bot.sendMessage(
+      chatId,
+      "📊 DATA:\n" + JSON.stringify(data, null, 2)
+    );
+  } else {
     bot.sendMessage(chatId, "❌ API Error:\n" + data);
-    return;
   }
+});
 
-  bot.sendMessage(chatId, "📊 DATA:\n" + JSON.stringify(data, null, 2));
+// 🛑 Error catch
+process.on("uncaughtException", (err) => {
+  console.log("Error:", err);
 });
