@@ -1,13 +1,13 @@
 {
-  "name": "wingo-bot",
+  "name": "telegram-api-bot",
   "version": "1.0.0",
-  "description": "Telegram Wingo Bot",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
     "axios": "^1.6.0",
+    "dotenv": "^16.0.0",
     "node-telegram-bot-api": "^0.61.0"
   }
 }
